@@ -1,0 +1,27 @@
+name: 'Repo Ops'
+description: 'Action to execute gh repo commands like archive, unarchive, create, etc.'
+author: 'rmottanet'
+branding:
+  icon: 'activity'
+  color: 'purple'
+inputs:
+  action:
+    description: 'The gh repo action to execute (e.g., archive, unarchive, create)'
+    required: true
+  owner:
+    description: 'The repository owner (user or org)'
+    required: true
+  repo_name:
+    description: 'The repository name'
+    required: true
+runs:
+  using: 'composite'
+  steps:
+    - name: Run repo-action.sh
+      shell: bash
+      run: |
+        chmod +x ${{ github.action_path }}/repo-action.sh
+        ${{ github.action_path }}/repo-action.sh \
+          "${{ inputs.action }}" \
+          "${{ inputs.owner }}" \
+          "${{ inputs.repo_name }}"
