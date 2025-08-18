@@ -14,6 +14,13 @@ inputs:
   repo_name:
     description: 'The repository name'
     required: true
+  description:
+    description: 'The repository description (optional, used with "create" action)'
+    required: false
+  visibility:
+    description: 'The repository visibility (public or private, default is "public" for "create" action)'
+    required: false
+    default: 'public'
 runs:
   using: 'composite'
   steps:
@@ -24,4 +31,6 @@ runs:
         ${{ github.action_path }}/repo-action.sh \
           "${{ inputs.action }}" \
           "${{ inputs.owner }}" \
-          "${{ inputs.repo_name }}"
+          "${{ inputs.repo_name }}" \
+          "${{ inputs.description }}" \
+          "${{ inputs.visibility }}"
