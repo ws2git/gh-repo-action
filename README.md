@@ -1,90 +1,111 @@
 # gh Repo Action
 
-This GitHub Action allows you to execute `gh repo` commands (such as `archive`, `unarchive`, `create`, etc.) on any repository your token has access to.  
-It is built as a composite action for easy reuse and extensibility.
+This GitHub Action allows you to execute `gh repo` commands (such as `archive`, `unarchive`, `create`, `delete`, etc.) on any repository your token has access to. It is built as a composite action for easy reuse and extensibility.
 
----
+-----
 
 ## Features
 
-- Supports any `gh repo` command by passing parameters directly.
-- Easily extensible for future `gh repo` subcommands (start with archive/unarchive, supports create, etc.).
-- Uses the official [GitHub CLI](https://cli.github.com/) for robust repository management.
-- Simple integration in any GitHub Actions workflow.
+  - **Comprehensive Command Support**: Now fully supports `gh repo create` and `gh repo delete` in addition to `archive`, `unarchive`, and others.
+  - **Enhanced `create` functionality**: You can specify the `description` and `visibility` (`public`, `private`, `internal`) for new repositories.
+  - **Simplified `delete` command**: Automates the repository deletion process, including the confirmation prompt.
+  - **Robust and Extensible**: The new `case` statement in the script makes it easy to add support for more `gh repo` subcommands in the future.
+  - Uses the official [GitHub CLI](https://cli.github.com/) for robust repository management.
+  - Simple integration in any GitHub Actions workflow.
 
+-----
 
 ## Requirements
 
-- **GitHub CLI (`gh`)**:  
-  The action requires the GitHub CLI to be available in the runner environment.  
-  All official GitHub-hosted Ubuntu runners (`ubuntu-latest`) include `gh` by default.
+  - **GitHub CLI (`gh`)**:
+    The action requires the GitHub CLI to be available in the runner environment.
+    All official GitHub-hosted Ubuntu runners (`ubuntu-latest`) include `gh` by default.
 
-- **Authentication Token**:  
-  The action uses the GitHub CLI, which expects an authentication token via the `GH_TOKEN` environment variable.  
-  In most cases, you should use the built-in `${{ github.token }}` or `${{ secrets.GITHUB_TOKEN }}` in your workflow step.
+  - **Authentication Token**:
+    The action uses the GitHub CLI, which expects an authentication token via the `GH_TOKEN` environment variable.
+    In most cases, you should use the built-in `${{ github.token }}` or `${{ secrets.GITHUB_TOKEN }}` in your workflow step. For creating or deleting repositories on behalf of a user or organization, a **Personal Access Token (PAT)** with appropriate scopes is recommended.
 
-  Example:
-  ```yaml
-  env:
-    GH_TOKEN: ${{ github.token }}
-  ```
+    Example:
 
-- **Permissions**:  
-  The token must have permission to perform the requested action on the target repository (admin for archive/unarchive, push/create for create, etc.).
+    ```yaml
+    env:
+      GH_TOKEN: ${{ github.token }}
+    ```
 
----
+  - **Permissions**:
+    The token must have sufficient permissions for the requested action on the target repository. This may require `contents: write` or broader `repo` scope permissions, especially for `create` and `delete` operations.
+
+-----
 
 ## Inputs
 
-| Name        | Required | Description                                 |
-|-------------|----------|---------------------------------------------|
-| `action`    | Yes      | The `gh repo` action to perform (e.g., `archive`, `unarchive`, `create`) |
-| `owner`     | Yes      | The repository owner (user or organization) |
-| `repo_name` | Yes      | The repository name                         |
+| Name        | Required | Description                                                         |
+|-------------|----------|---------------------------------------------------------------------|
+| `action`    | Yes      | The `gh repo` action to perform (e.g., `create`, `delete`, `archive`). |
+| `owner`     | Yes      | The repository owner (user or organization).                        |
+| `repo_name` | Yes      | The repository name.                                                |
+| `description` | No | The repository description (for `create` action only). |
+| `visibility` | No | The repository visibility (`public`, `private`, or `internal`). Default is `public`. |
 
+-----
 
-## Usage Example
+## Usage Examples
+
+**Example 1: Archive a repository**
 
 ```yaml
-- uses: ws2git/gh-repo-action@v1
-  env:
-    GH_TOKEN: ${{ github.token }}
+- uses: ws2git/gh-repo-action@v2
   with:
     action: "archive"
     owner: "my-org"
     repo_name: "my-repo"
-```
-
-You may also use `"unarchive"` or any other supported subcommand:
-
-```yaml
-- uses: ws2git/gh-repo-action@v1
   env:
     GH_TOKEN: ${{ github.token }}
-  with:
-    action: "unarchive"
-    owner: "my-org"
-    repo_name: "my-repo"
 ```
 
----
+**Example 2: Create a new private repository**
+
+```yaml
+- uses: ws2git/gh-repo-action@v2
+  with:
+    action: "create"
+    owner: "my-org"
+    repo_name: "my-private-project"
+    description: "This is a private project created by an action."
+    visibility: "private"
+  env:
+    GH_TOKEN: ${{ secrets.MY_PAT }}
+```
+
+**Example 3: Delete a repository**
+
+```yaml
+- uses: ws2git/gh-repo-action@v2
+  with:
+    action: "delete"
+    owner: "my-org"
+    repo_name: "my-old-project"
+  env:
+    GH_TOKEN: ${{ secrets.MY_PAT }}
+```
+
+-----
 
 ## How it Works
 
-The action calls a shell script (`repo-action.sh`) that constructs the full repository identifier from the provided `owner` and `repo_name`, then passes your chosen action directly to the `gh repo` command with the appropriate parameters.
-
+The action calls a shell script (`repo-action.sh`) that constructs the full repository identifier from the provided `owner` and `repo_name`, then passes your chosen action directly to the `gh repo` command with the appropriate parameters. The script uses a `case` statement to handle each command type and its specific arguments.
 
 ## Limitations
 
-- The action does **not** validate whether the action is supported by the GitHub CLI or if the repository exists; errors from `gh` will cause the workflow step to fail.
-- Both `owner` and `repo_name` must be provided for all actions that require a repository identifier (e.g., `archive`, `unarchive`). For actions that do **not** require a repository (such as `gh repo create`), you may ignore or adjust accordingly.
-- The GitHub token used must have sufficient permissions for the requested operation.
-- The action does **not** check if the repository is already archived/unarchived/etc. before executing.
-- Output and errors from the CLI are directly passed to the workflow logs.
+  - The action does **not** validate whether the action is supported by the GitHub CLI or if the repository exists; errors from `gh` will cause the workflow step to fail.
+  - Both `owner` and `repo_name` must be provided for all actions that require a repository identifier (e.g., `archive`, `unarchive`, `delete`). For actions that do **not** require a repository (such as `gh repo create`), only `owner` and `repo_name` are required.
+  - The GitHub token used must have sufficient permissions for the requested operation.
+  - The action does **not** check if the repository is already archived/unarchived/etc. before executing.
+  - Output and errors from the CLI are directly passed to the workflow logs.
 
----
+-----
 
 ## Notes
 
-- This action is intended for automation and batch operations where you want to manage repositories programmatically.
-- For more information on available `gh repo` commands, see the [GitHub CLI documentation](https://cli.github.com/manual/gh_repo).
+  - This action is intended for automation and batch operations where you want to manage repositories programmatically.
+  - For more information on available `gh repo` commands, see the [GitHub CLI documentation](https://cli.github.com/manual/gh_repo).
