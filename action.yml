@@ -6,7 +6,7 @@ branding:
   color: 'purple'
 inputs:
   action:
-    description: 'The gh repo action to execute (e.g., archive, unarchive, create)'
+    description: 'The gh repo action to execute (e.g., archive, unarchive, create, edit)'
     required: true
   owner:
     description: 'The repository owner (user or org)'
@@ -15,7 +15,7 @@ inputs:
     description: 'The repository name'
     required: true
   description:
-    description: 'The repository description (optional, used with "create" action)'
+    description: 'The repository description (optional, used with "create" or "edit" actions)'
     required: false
   visibility:
     description: 'The repository visibility (public, private or internal, default is "public" for "create" action)'
@@ -30,6 +30,18 @@ inputs:
     default: 'false'
   template:
     description: 'The repository to use as a template. Cannot be used with add_readme or team inputs. (Used with "create" action)'
+    required: false
+  new_name:
+    description: 'The new name for the repository. (Used with "edit" action)'
+    required: false
+  homepage:
+    description: 'The new homepage URL for the repository. (Used with "edit" action)'
+    required: false
+  add_topics:
+    description: 'A comma-separated list of topics to add to the repository. (Used with "edit" action)'
+    required: false
+  remove_topics:
+    description: 'A comma-separated list of topics to remove from the repository. (Used with "edit" action)'
     required: false
 runs:
   using: 'composite'
@@ -46,4 +58,9 @@ runs:
           "${{ inputs.visibility }}" \
           "${{ inputs.team }}" \
           "${{ inputs.add_readme }}" \
-          "${{ inputs.template }}"
+          "${{ inputs.template }}" \
+          "${{ inputs.new_name }}" \
+          "${{ inputs.homepage }}" \
+          "${{ inputs.add_topics }}" \
+          "${{ inputs.remove_topics }}"
+ 
